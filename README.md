@@ -4,9 +4,12 @@
 
 Production-ready Next.js 15 + Supabase + Stripe boilerplate. Every SaaS needs auth, billing, a dashboard, and an admin panel — they're all here, wired up and ready to go.
 
+[![Live Demo](https://img.shields.io/badge/demo-live-violet)](https://saas-starter-eight-topaz.vercel.app)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jktrolbot/nackin-saas-starter)
 [![GitHub Stars](https://img.shields.io/github/stars/jktrolbot/nackin-saas-starter?style=flat)](https://github.com/jktrolbot/nackin-saas-starter/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**🌐 Live Demo:** https://saas-starter-eight-topaz.vercel.app
 
 ---
 
