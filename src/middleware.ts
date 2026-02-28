@@ -31,8 +31,9 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Protected routes
-  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/settings') || pathname.startsWith('/billing'))) {
+  // Protected routes — keep in sync with the dashboard route group
+  const protectedPrefixes = ['/dashboard', '/admin', '/settings', '/billing', '/analytics', '/projects']
+  if (!user && protectedPrefixes.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

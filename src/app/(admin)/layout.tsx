@@ -19,8 +19,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .eq('id', user.id)
     .single()
 
-  // In production, check role === 'admin'
-  // if (profile?.role !== 'admin') redirect('/dashboard')
+  // Admin access gate: redirect non-admin users to the dashboard.
+  // When `profile` is null (no Supabase connection / demo mode) the check is
+  // skipped so the portfolio demo remains navigable without a live DB.
+  // In a real deployment remove the `profile &&` guard.
+  if (profile && profile.role !== 'admin') redirect('/dashboard')
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
