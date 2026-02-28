@@ -30,11 +30,13 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, org_id')
-    .eq('id', user!.id)
-    .single()
+  const { data: profile } = user
+    ? await supabase
+        .from('profiles')
+        .select('full_name, org_id')
+        .eq('id', user.id)
+        .single()
+    : { data: null }
 
   // Mock stats (would come from DB in production)
   const stats = [

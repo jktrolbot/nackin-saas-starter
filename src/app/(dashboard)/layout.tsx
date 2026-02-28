@@ -5,7 +5,7 @@ import { UserMenu } from '@/components/dashboard/user-menu'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-react'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -41,6 +41,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-64">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Navigation</SheetTitle>
+                  <SheetDescription>Main navigation menu</SheetDescription>
+                </SheetHeader>
                 <Sidebar className="h-full rounded-none border-0" />
               </SheetContent>
             </Sheet>

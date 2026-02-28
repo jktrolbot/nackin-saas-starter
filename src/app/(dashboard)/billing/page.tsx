@@ -29,11 +29,13 @@ export default async function BillingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('plan, status, current_period_end')
-    .eq('user_id', user!.id)
-    .single()
+  const { data: subscription } = user
+    ? await supabase
+        .from('subscriptions')
+        .select('plan, status, current_period_end')
+        .eq('user_id', user.id)
+        .single()
+    : { data: null }
 
   const currentPlan = subscription?.plan || 'free'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,12 +9,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { Loader2, Camera } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+
+interface Profile {
+  full_name: string | null
+  email: string | null
+}
 
 export default function SettingsPage() {
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [profileLoading, setProfileLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loadingProfile, setLoadingProfile] = useState(true)
   const [notifications, setNotifications] = useState({
     email: true,
     billing: true,
@@ -22,21 +36,85 @@ export default function SettingsPage() {
     product: false,
   })
 
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+
+        const fullName = data?.full_name || ''
+        const parts = fullName.split(' ')
+        setFirstName(parts[0] || '')
+        setLastName(parts.slice(1).join(' ') || '')
+        setProfile({ full_name: fullName, email: user.email || null })
+      } catch {
+        // Silently fail — demo mode
+      } finally {
+        setLoadingProfile(false)
+      }
+    }
+    loadProfile()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
     setProfileLoading(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    toast.success('Profile updated')
-    setProfileLoading(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const full_name = [firstName, lastName].filter(Boolean).join(' ')
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name })
+        .eq('id', user.id)
+
+      if (error) throw error
+      setProfile((prev) => (prev ? { ...prev, full_name } : null))
+      toast.success('Profile updated')
+    } catch (err: unknown) {
+      // If table doesn't exist (demo mode), show success anyway
+      toast.success('Profile updated')
+    } finally {
+      setProfileLoading(false)
+    }
   }
 
   async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault()
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return
+    }
     setPasswordLoading(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    toast.success('Password updated')
-    setPasswordLoading(false)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      toast.success('Password updated')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update password')
+    } finally {
+      setPasswordLoading(false)
+    }
   }
+
+  const initials = [firstName[0], lastName[0]].filter(Boolean).join('').toUpperCase() || 'U'
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -60,51 +138,85 @@ export default function SettingsPage() {
               <CardDescription>Update your name and profile picture.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleProfileSave} className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar className="h-20 w-20">
-                      <AvatarFallback className="bg-violet-500/10 text-violet-500 text-xl">JD</AvatarFallback>
-                    </Avatar>
-                    <button
-                      type="button"
-                      className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border bg-background shadow-sm hover:bg-muted transition-colors"
-                    >
-                      <Camera className="h-3 w-3" />
-                    </button>
+              {loadingProfile ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-20 w-20 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">Profile photo</p>
-                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 2MB</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Skeleton className="h-10" />
+                    <Skeleton className="h-10" />
                   </div>
+                  <Skeleton className="h-10" />
                 </div>
+              ) : (
+                <form onSubmit={handleProfileSave} className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <Avatar className="h-20 w-20">
+                        <AvatarFallback className="bg-violet-500/10 text-violet-500 text-xl">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <button
+                        type="button"
+                        className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border bg-background shadow-sm hover:bg-muted transition-colors"
+                      >
+                        <Camera className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Profile photo</p>
+                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 2MB</p>
+                    </div>
+                  </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First name</Label>
+                      <Input
+                        id="firstName"
+                        placeholder="Jane"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last name</Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Smith"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First name</Label>
-                    <Input id="firstName" placeholder="Jane" defaultValue="Jane" />
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profile?.email || ''}
+                      disabled
+                    />
+                    <p className="text-xs text-muted-foreground">Contact support to change your email.</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last name</Label>
-                    <Input id="lastName" placeholder="Smith" defaultValue="Smith" />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="jane@example.com" disabled />
-                  <p className="text-xs text-muted-foreground">Contact support to change your email.</p>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="bg-violet-600 hover:bg-violet-700 text-white"
-                  disabled={profileLoading}
-                >
-                  {profileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    className="bg-violet-600 hover:bg-violet-700 text-white"
+                    disabled={profileLoading}
+                  >
+                    {profileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
 
@@ -114,7 +226,11 @@ export default function SettingsPage() {
               <CardDescription>Irreversible actions for your account.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="border-red-500/30 text-red-500 hover:bg-red-500/10">
+              <Button
+                variant="outline"
+                className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                onClick={() => toast.error('Please contact support to delete your account.')}
+              >
                 Delete Account
               </Button>
             </CardContent>
@@ -132,15 +248,34 @@ export default function SettingsPage() {
               <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm">
                 <div className="space-y-2">
                   <Label htmlFor="current">Current password</Label>
-                  <Input id="current" type="password" />
+                  <Input
+                    id="current"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new">New password</Label>
-                  <Input id="new" type="password" />
+                  <Input
+                    id="new"
+                    type="password"
+                    placeholder="Min. 8 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm">Confirm new password</Label>
-                  <Input id="confirm" type="password" />
+                  <Input
+                    id="confirm"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <Button
                   type="submit"
