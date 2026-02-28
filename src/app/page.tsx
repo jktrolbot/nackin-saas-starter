@@ -138,7 +138,7 @@ export default function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="https://github.com/jktrolbot/nackin-saas-starter" target="_blank">
+            <Link href="https://github.com/nackin-io/nackin-saas-starter" target="_blank">
               <Button size="lg" variant="outline" className="gap-2 px-8">
                 <Code2 className="h-4 w-4" />
                 View Source
@@ -371,7 +371,7 @@ export default function LandingPage() {
           </div>
           <div className="mt-12 border-t pt-6 text-center text-sm text-muted-foreground">
             © {new Date().getFullYear()} SaaSKit. Built with ❤️ by{' '}
-            <Link href="https://github.com/jktrolbot" className="hover:text-foreground transition-colors">
+            <Link href="https://nackin.io" className="hover:text-foreground transition-colors">
               Nackin
             </Link>
           </div>

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     'Production-ready Next.js 15 + Supabase + Stripe boilerplate. Auth, billing, dashboard, admin — all wired up. Ship your SaaS fast.',
   keywords: ['SaaS', 'Next.js', 'Supabase', 'Stripe', 'boilerplate', 'starter kit'],
-  authors: [{ name: 'Nackin', url: 'https://github.com/jktrolbot' }],
+  authors: [{ name: 'Nackin', url: 'https://nackin.io' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
