@@ -49,21 +49,26 @@ export async function POST(request: Request) {
     }
 
     case 'customer.subscription.updated': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sub = event.data.object as any
+      const sub = event.data.object as Stripe.Subscription & {
+        // Field exists at runtime but was removed from types in newer API versions
+        current_period_end?: number
+      }
+      const updateData: Record<string, string> = { status: sub.status }
+      if (sub.current_period_end) {
+        updateData.current_period_end = new Date(sub.current_period_end * 1000).toISOString()
+      } else if (sub.billing_cycle_anchor) {
+        // Fallback: use billing_cycle_anchor as period reference
+        updateData.current_period_end = new Date(sub.billing_cycle_anchor * 1000).toISOString()
+      }
       await supabase
         .from('subscriptions')
-        .update({
-          status: sub.status,
-          current_period_end: new Date((sub.current_period_end as number) * 1000).toISOString(),
-        })
+        .update(updateData)
         .eq('stripe_subscription_id', sub.id)
       break
     }
 
     case 'customer.subscription.deleted': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sub = event.data.object as any
+      const sub = event.data.object as Stripe.Subscription
       await supabase
         .from('subscriptions')
         .update({ plan: 'free', status: 'canceled' })

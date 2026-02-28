@@ -12,12 +12,18 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 
-const navItems = [
+interface NavItem {
+  href: string
+  icon: React.ElementType
+  label: string
+  badge?: string
+}
+
+const navItems: NavItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/projects', icon: FolderOpen, label: 'Projects' },
-  { href: '/analytics', icon: BarChart3, label: 'Analytics', badge: 'Soon' },
+  { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/billing', icon: CreditCard, label: 'Billing' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
@@ -51,9 +57,9 @@ export function Sidebar({ className }: { className?: string }) {
               <item.icon className="h-4 w-4 flex-shrink-0" />
               {item.label}
               {item.badge && (
-                <Badge variant="secondary" className="ml-auto text-xs py-0">
+                <span className="ml-auto rounded-full bg-secondary px-1.5 py-0.5 text-xs font-medium">
                   {item.badge}
-                </Badge>
+                </span>
               )}
             </Link>
           )
